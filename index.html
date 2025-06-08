@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FilmLab AI - Interactive Film Photography Education</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #1e3c72;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .header .tagline {
+            color: #666;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .demo-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .demo-title {
+            font-size: 1.5rem;
+            color: #1e3c72;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+        
+        .film-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            border-left: 4px solid #2a5298;
+        }
+        
+        .film-info h4 {
+            color: #1e3c72;
+            margin-bottom: 0.5rem;
+        }
+        
+        .film-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+        }
+        
+        .film-spec {
+            background: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        
+        .generate-btn {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 2rem auto;
+            min-width: 200px;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(42, 82, 152, 0.3);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2a5298;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .result-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .result-panel h3 {
+            color: #1e3c72;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .analysis-text {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .generated-image {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .image-placeholder {
+            width: 100%;
+            height: 300px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.1rem;
+            border: 2px dashed #ddd;
+        }
+        
+        .prompt-display {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-style: italic;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .education-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-card h3 {
+            color: #1e3c72;
+            margin-bottom: 0.5rem;
+        }
+        
+        .demo-note {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .demo-note strong {
+            color: #b7791f;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .results {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎞️ FilmLab AI</h1>
+        <p class="tagline">Interactive Film Photography Education Platform</p>
+    </div>
+    
+    <div class="container">
+        <div class="demo-section">
+            <h2 class="demo-title">Experience AI-Powered Film Education</h2>
+            
+            <div class="demo-note">
+                <strong>🎓 For Educators:</strong> This demo shows how students can learn film characteristics visually, 
+                without expensive film costs. Perfect for photography programs, workshops, and online courses.
+            </div>
+            
+            <div class="form-grid">
+                <div>
+                    <div class="form-group">
+                        <label for="filmStock">Choose Film Stock:</label>
+                        <select id="filmStock" onchange="showFilmInfo()">
+                            <option value="">-- Select Film Stock --</option>
+                            <option value="cinestill_800t">CineStill 800T - Night Photography</option>
+                            <option value="kodak_portra_800">Kodak Portra 800 - Portraits</option>
+                            <option value="fujifilm_velvia_50">Fujifilm Velvia 50 - Landscapes</option>
+                            <option value="kodak_ektar_100">Kodak Ektar 100 - Travel</option>
+                            <option value="kodak_gold_200">Kodak Gold 200 - General Use</option>
+                            <option value="fujifilm_superia_400">Fujifilm Superia 400 - Everyday</option>
+                        </select>
+                        <div id="filmInfo" class="film-info" style="display: none;"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subject">Photography Subject:</label>
+                        <input type="text" id="subject" placeholder="e.g., Portrait of a student photographer" value="Portrait of a photography student">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lighting">Lighting Conditions:</label>
+                        <select id="lighting">
+                            <option value="Natural daylight">Natural daylight</option>
+                            <option value="Golden hour">Golden hour</option>
+                            <option value="Overcast sky">Overcast sky</option>
+                            <option value="Studio strobes">Studio strobes</option>
+                            <option value="Window light">Soft window light</option>
+                            <option value="Street lights">Street lights</option>
+                            <option value="Neon lights">Neon lights and urban lighting</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="form-group">
+                        <label for="camera">Camera (Optional):</label>
+                        <input type="text" id="camera" placeholder="e.g., Canon AE-1, Nikon F3" value="Canon AE-1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="analysisDepth">Analysis Depth:</label>
+                        <select id="analysisDepth">
+                            <option value="Standard">Standard - Quick overview</option>
+                            <option value="Detailed">Detailed - Educational analysis</option>
+                            <option value="Professional">Professional - Complete evaluation</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="assignmentNotes">Assignment Notes (Optional):</label>
+                        <textarea id="assignmentNotes" rows="3" placeholder="e.g., Compare how this film handles skin tones vs. other portrait films..."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="generate-btn" onclick="generateDemo()">
+                🔬 Generate Film Analysis + Preview Image
+            </button>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p><strong>Analyzing film characteristics and generating preview...</strong></p>
+                <p style="margin-top: 0.5rem; color: #666;">This usually takes 10-15 seconds</p>
+            </div>
+            
+            <div id="results" class="results" style="display: none;">
+                <div class="result-panel">
+                    <h3>📋 AI Film Analysis</h3>
+                    <div id="analysisResult" class="analysis-text">
+                        Analysis will appear here...
+                    </div>
+                </div>
+                
+                <div class="result-panel">
+                    <h3>🖼️ Generated Preview Image</h3>
+                    <div id="imageResult">
+                        <div class="image-placeholder">
+                            Generated image will appear here
+                        </div>
+                    </div>
+                    <div id="promptResult" class="prompt-display" style="display: none;">
+                        <strong>Image Generation Prompt:</strong> <span id="promptText"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2 class="demo-title">🎓 Perfect for Photography Education</h2>
+            
+            <div class="education-features">
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3>Cost Savings</h3>
+                    <p>Students learn film characteristics without buying expensive film ($15-20 per roll). Test unlimited combinations digitally.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">👁️</div>
+                    <h3>Visual Learning</h3>
+                    <p>See actual differences between films instead of reading descriptions. Compare multiple stocks side-by-side instantly.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3>Curriculum Ready</h3>
+                    <p>Built-in assignments, progress tracking, and educational resources. Perfect for structured photography courses.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI-Powered</h3>
+                    <p>Advanced AI understands film characteristics and generates accurate previews. Constantly learning and improving.</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem; padding: 2rem; background: #f8f9fa; border-radius: 10px;">
+                <h3 style="color: #1e3c72; margin-bottom: 1rem;">Interested in FilmLab AI for Your Program?</h3>
+                <p style="margin-bottom: 1.5rem; color: #666;">Join our education beta program and help shape the future of film photography education.</p>
+                <button onclick="showContactForm()" style="background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    🎓 Request Education Demo
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Film stock database for demo
+        const filmDatabase = {
+            cinestill_800t: {
+                name: "CineStill 800T",
+                type: "Color Negative",
+                iso: 800,
+                characteristics: "Tungsten balanced with unique halation effects around bright lights",
+                colorPalette: "Warm tones with distinctive red halation glow",
+                grain: "Fine to moderate with distinctive character",
+                bestFor: "Night photography, neon lights, artificial lighting",
+                educational: "Perfect for teaching tungsten color balance and creative lighting effects"
+            },
+            kodak_portra_800: {
+                name: "Kodak Portra 800",
+                type: "Color Negative", 
+                iso: 800,
+                characteristics: "Professional portrait film with natural skin tone reproduction",
+                colorPalette: "Natural, warm undertones excellent for skin",
+                grain: "Very fine for high-speed film",
+                bestFor: "Portraits, weddings, available light photography",
+                educational: "Industry standard for teaching portrait photography and skin tone rendering"
+            },
+            fujifilm_velvia_50: {
+                name: "Fujifilm Velvia 50",
+                type: "Color Slide/Reversal",
+                iso: 50,
+                characteristics: "Ultra-high color saturation with razor-sharp detail",
+                colorPalette: "Extremely saturated, especially greens and blues",
+                grain: "Ultra-fine with exceptional detail",
+                bestFor: "Landscapes, nature, macro photography",
+                educational: "Excellent for teaching color saturation and slide film characteristics"
+            },
+            kodak_ektar_100: {
+                name: "Kodak Ektar 100",
+                type: "Color Negative",
+                iso: 100,
+                characteristics: "World's finest grain color negative with ultra-high saturation",
+                colorPalette: "Highly saturated, vivid colors especially blues and greens",
+                grain: "Ultra-fine, comparable to slide film",
+                bestFor: "Landscapes, travel, architecture",
+                educational: "Perfect for teaching fine grain characteristics and color saturation"
+            },
+            kodak_gold_200: {
+                name: "Kodak Gold 200",
+                type: "Color Negative",
+                iso: 200,
+                characteristics: "Consumer film with warm color bias and good versatility",
+                colorPalette: "Warm, golden tones with slight yellow cast",
+                grain: "Fine with pleasing character",
+                bestFor: "General photography, sunny conditions",
+                educational: "Great starter film for teaching basic color negative characteristics"
+            },
+            fujifilm_superia_400: {
+                name: "Fujifilm Superia 400",
+                type: "Color Negative",
+                iso: 400,
+                characteristics: "Versatile consumer film with natural color reproduction",
+                colorPalette: "Natural, slightly cool tones",
+                grain: "Fine with good sharpness",
+                bestFor: "General photography, travel, everyday use",
+                educational: "Excellent for teaching everyday photography and color balance"
+            }
+        };
+        
+        function showFilmInfo() {
+            const select = document.getElementById('filmStock');
+            const infoDiv = document.getElementById('filmInfo');
+            
+            if (select.value && filmDatabase[select.value]) {
+                const film = filmDatabase[select.value];
+                infoDiv.innerHTML = `
+                    <h4>${film.name}</h4>
+                    <div class="film-specs">
+                        <div class="film-spec"><strong>Type:</strong> ${film.type}</div>
+                        <div class="film-spec"><strong>ISO:</strong> ${film.iso}</div>
+                        <div class="film-spec"><strong>Grain:</strong> ${film.grain}</div>
+                    </div>
+                    <p><strong>Color Palette:</strong> ${film.colorPalette}</p>
+                    <p><strong>Best For:</strong> ${film.bestFor}</p>
+                    <p><strong>Educational Value:</strong> ${film.educational}</p>
+                `;
+                infoDiv.style.display = 'block';
+            } else {
+                infoDiv.style.display = 'none';
+            }
+        }
+        
+        function generateDemo() {
+            const filmStock = document.getElementById('filmStock').value;
+            const subject = document.getElementById('subject').value;
+            const lighting = document.getElementById('lighting').value;
+            const camera = document.getElementById('camera').value;
+            const analysisDepth = document.getElementById('analysisDepth').value;
+            const notes = document.getElementById('assignmentNotes').value;
+            
+            if (!filmStock) {
+                alert('Please select a film stock first!');
+                return;
+            }
+            
+            if (!subject.trim()) {
+                alert('Please enter a subject description!');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').style.display = 'none';
+            document.querySelector('.generate-btn').disabled = true;
+            
+            // Simulate API call (replace with actual backend call)
+            setTimeout(() => {
+                const film = filmDatabase[filmStock];
+                generateMockResults(film, subject, lighting, camera, analysisDepth, notes);
+            }, 3000); // 3 second delay to simulate processing
+        }
+        
+        function generateMockResults(film, subject, lighting, camera, analysisDepth, notes) {
+            // Generate mock analysis
+            const analysis = generateMockAnalysis(film, subject, lighting, camera, analysisDepth, notes);
+            
+            // Generate mock image URL (replace with actual generated image)
+            const imageUrl = `https://picsum.photos/512/512?random=${Math.floor(Math.random() * 1000)}`;
+            
+            // Generate mock prompt
+            const prompt = `${subject}, ${lighting}, shot on ${film.name}, ${film.colorPalette.toLowerCase()}, film grain, analog photography, professional photography`;
+            
+            // Display results
+            document.getElementById('analysisResult').textContent = analysis;
+            document.getElementById('imageResult').innerHTML = `<img src="${imageUrl}" alt="Generated Preview" class="generated-image">`;
+            document.getElementById('promptText').textContent = prompt;
+            document.getElementById('promptResult').style.display = 'block';
+            
+            // Hide loading, show results
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('results').style.display = 'grid';
+            document.querySelector('.generate-btn').disabled = false;
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function generateMockAnalysis(film, subject, lighting, camera, analysisDepth, notes) {
+            const timestamp = new Date().toLocaleDateString();
+            
+            return `# 🎞️ Film Analysis Report - ${timestamp}
+
+## 📸 Shot Information
+**Film Stock:** ${film.name} (${film.type}, ISO ${film.iso})
+**Camera:** ${camera || 'Not specified'}
+**Subject:** ${subject}
+**Lighting:** ${lighting}
+
+## 🧬 Film Characteristics Profile
+**Color Character:** ${film.colorPalette}
+**Grain Structure:** ${film.grain}
+**Key Traits:** ${film.characteristics}
+**Best Applications:** ${film.bestFor}
+
+## 🔍 Technical Analysis Framework
+
+### Exposure & Latitude
+- **Recommended Exposure:** Expose for highlights, develop for shadows
+- **Push/Pull Capability:** ${film.iso >= 400 ? 'Good push performance to next stop' : 'Best at box speed'}
+- **Exposure Latitude:** ${film.type.includes('Negative') ? 'Excellent (+2 to -1 stops)' : 'Limited (±1/3 stop)'}
+
+### Expected Characteristics for This Shot
+- **Grain Visibility:** ${film.grain.includes('fine') ? 'Minimal grain, excellent detail' : 'Moderate grain, artistic character'}
+- **Color Rendition:** ${film.colorPalette}
+- **Contrast:** ${film.type.includes('Slide') ? 'High contrast, punchy' : 'Moderate contrast, printable'}
+
+### Educational Learning Points
+${analysisDepth === 'Professional' ? `
+**Professional Assessment:**
+- Optimal for ${film.bestFor.toLowerCase()}
+- ${film.educational}
+- Compare with similar ISO films for learning
+
+**Technical Specifications:**
+- Development: ${film.type.includes('Slide') ? 'E-6 process' : 'C-41 process'}
+- Scanning considerations: ${film.grain.includes('fine') ? 'High resolution capable' : 'Medium resolution adequate'}
+- Print characteristics: ${film.type.includes('Negative') ? 'Multiple contrast grades available' : 'Direct positive, limited contrast control'}
+` : analysisDepth === 'Detailed' ? `
+**Detailed Analysis:**
+- ${film.educational}
+- Key learning: Understanding ${film.characteristics.toLowerCase()}
+- Compare with: ${getComparisonFilms(film)}
+` : `
+**Standard Analysis:**
+- ${film.educational}
+- Primary characteristic: ${film.colorPalette.toLowerCase()}
+`}
+
+${notes ? `
+## 📝 Assignment Notes
+${notes}
+` : ''}
+
+## 📊 Educational Assessment
+**Technical Quality Expected:** 8-9/10
+**Learning Value:** Excellent for understanding ${film.bestFor.toLowerCase()}
+**Comparison Opportunity:** Compare with other ${film.iso} ISO films
+
+---
+*Generated by FilmLab AI Educational Platform*
+*Perfect for photography education and visual learning*`;
+        }
+        
+        function getComparisonFilms(film) {
+            if (film.iso === 800) return "Kodak Portra 800, CineStill 800T";
+            if (film.iso === 400) return "Kodak Portra 400, Fujifilm Pro 400H";
+            if (film.iso === 200) return "Kodak Gold 200, Fujifilm Superia 200";
+            if (film.iso === 100) return "Kodak Ektar 100, Fujifilm Provia 100F";
+            return "Similar ISO films";
+        }
+        
+        function showContactForm() {
+            alert('🎓 Education Demo Request\n\nFor a personalized demo and education pricing:\n\n📧 Email: demo@filmlab-ai.com\n📞 Phone: Schedule a call\n🌐 Web: filmlab-ai.com/education\n\nWe\'ll show you how FilmLab AI can transform your photography curriculum!');
+        }
+        
+        // Initialize with default film selection
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('filmStock').value = 'kodak_portra_800';
+            showFilmInfo();
+        });
+    </script>
+</body>
+</html>
