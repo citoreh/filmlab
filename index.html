@@ -515,35 +515,137 @@
             }
         }
         
-        function generateDemo() {
-            const filmStock = document.getElementById('filmStock').value;
-            const subject = document.getElementById('subject').value;
-            const lighting = document.getElementById('lighting').value;
-            const camera = document.getElementById('camera').value;
-            const analysisDepth = document.getElementById('analysisDepth').value;
-            const notes = document.getElementById('assignmentNotes').value;
-            
-            if (!filmStock) {
-                alert('Please select a film stock first!');
-                return;
-            }
-            
-            if (!subject.trim()) {
-                alert('Please enter a subject description!');
-                return;
-            }
-            
-            // Show loading
-            document.getElementById('loading').classList.add('show');
-            document.getElementById('results').style.display = 'none';
-            document.querySelector('.generate-btn').disabled = true;
-            
-            // Simulate API call (replace with actual backend call)
-            setTimeout(() => {
-                const film = filmDatabase[filmStock];
-                generateMockResults(film, subject, lighting, camera, analysisDepth, notes);
-            }, 3000); // 3 second delay to simulate processing
+// Update your HTML demo to connect to the real backend
+// Add this JavaScript to replace the generateDemo() function
+
+async function generateDemo() {
+    const filmStock = document.getElementById('filmStock').value;
+    const subject = document.getElementById('subject').value;
+    const lighting = document.getElementById('lighting').value;
+    const camera = document.getElementById('camera').value;
+    const analysisDepth = document.getElementById('analysisDepth').value;
+    const notes = document.getElementById('assignmentNotes').value;
+    
+    if (!filmStock) {
+        alert('Please select a film stock first!');
+        return;
+    }
+    
+    if (!subject.trim()) {
+        alert('Please enter a subject description!');
+        return;
+    }
+    
+    // Show loading
+    document.getElementById('loading').classList.add('show');
+    document.getElementById('results').style.display = 'none';
+    document.querySelector('.generate-btn').disabled = true;
+    
+    try {
+        // Call your real backend API
+        const response = await fetch('http://localhost:5000/api/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                film_stock: filmStock,
+                subject: subject,
+                lighting: lighting,
+                camera: camera,
+                analysis_depth: analysisDepth,
+                notes: notes
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Display real results
+            document.getElementById('analysisResult').textContent = result.analysis;
+            document.getElementById('imageResult').innerHTML = `<img src="${result.image_url}" alt="Generated Preview" class="generated-image">`;
+            document.getElementById('promptText').textContent = result.prompt;
+            document.getElementById('promptResult').style.display = 'block';
+            
+            // Show success indicator
+            if (result.source === 'ai_generated') {
+                document.getElementById('promptResult').style.borderLeft = '4px solid #28a745';
+                document.getElementById('promptResult').innerHTML = `
+                    <strong>✅ Real AI Generated:</strong> ${result.prompt}<br>
+                    <small style="color: #28a745;">Powered by your film analysis AI + image generation</small>
+                `;
+            } else {
+                document.getElementById('promptResult').style.borderLeft = '4px solid #ffc107';
+                document.getElementById('promptResult').innerHTML = `
+                    <strong>🧪 Demo Mode:</strong> ${result.prompt}<br>
+                    <small style="color: #856404;">Connect your AI model for real results</small>
+                `;
+            }
+        } else {
+            throw new Error(result.error || 'Unknown error');
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        
+        // Show error message
+        document.getElementById('analysisResult').textContent = `❌ Error: ${error.message}\n\nThis might happen if:\n- Backend server isn't running\n- API token isn't configured\n- Network connection issues\n\nCheck the console for details.`;
+        document.getElementById('imageResult').innerHTML = `<div class="image-placeholder">❌ Error generating image</div>`;
+        document.getElementById('promptResult').style.display = 'none';
+        
+        alert(`Error: ${error.message}\n\nMake sure your backend server is running at http://localhost:5000`);
+    }
+    
+    // Hide loading, show results
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('results').style.display = 'grid';
+    document.querySelector('.generate-btn').disabled = false;
+    
+    // Scroll to results
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Add status check function
+async function checkBackendStatus() {
+    try {
+        const response = await fetch('http://localhost:5000/api/status');
+        const status = await response.json();
+        
+        // Show status indicator
+        const statusIndicator = document.createElement('div');
+        statusIndicator.style.cssText = `
+            position: fixed; top: 10px; right: 10px; 
+            padding: 10px; border-radius: 5px; 
+            color: white; font-weight: bold; z-index: 1000;
+            background: ${status.ai_available ? '#28a745' : '#ffc107'};
+        `;
+        statusIndicator.textContent = status.ai_available ? '✅ AI Connected' : '🧪 Demo Mode';
+        document.body.appendChild(statusIndicator);
+        
+    } catch (error) {
+        // Show offline indicator
+        const statusIndicator = document.createElement('div');
+        statusIndicator.style.cssText = `
+            position: fixed; top: 10px; right: 10px; 
+            padding: 10px; border-radius: 5px; 
+            color: white; font-weight: bold; z-index: 1000;
+            background: #dc3545;
+        `;
+        statusIndicator.textContent = '❌ Backend Offline';
+        document.body.appendChild(statusIndicator);
+    }
+}
+
+// Check backend status when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('filmStock').value = 'Kodak Portra 800';
+    showFilmInfo();
+    checkBackendStatus();
+});
         
         function generateMockResults(film, subject, lighting, camera, analysisDepth, notes) {
             // Generate mock analysis
